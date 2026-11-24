@@ -1,5 +1,7 @@
 from src import config
 
+import pandas as pd
+
 def mult_failed_login(logs):
     failure_counts = {}     #initialize dicts to store usernames with their associated number of failed logins
 
@@ -17,3 +19,18 @@ def mult_failed_login(logs):
             flagged_users[username] = count
 
     return flagged_users
+
+
+def unusual_login_time(logs):
+    timestamps = pd.to_datetime(logs[config.TIMESTAMP_COL], errors = "coerce")      #stores date AND time of each logina attempt
+    hour_login = timestamps.dt.hour #stores the hour of each login attempt
+
+
+    ineligible_logins = (
+        timestamps.notna()          #gets the timestamps that arent null
+        & (hour_login >= config.UNUSUAL_HOUR_START)     #ANDS it with the times that are between unusual hours to flag them to put into different dict
+        & (hour_login <= config.UNUSUAL_HOUR_END)
+
+    )
+
+    return logs.loc[ineligible_logins, config.USERNAME_COL].value_counts().to_dict()  #returns a dict of usernames and their number of logins during unusual hours
